@@ -9,23 +9,23 @@ import (
 func main() {
 	http.HandleFunc("/endpointA", func(w http.ResponseWriter, r *http.Request) {
 		// data from serviceB
-		dataFromB := []byte("Данные от сервиса B")
+		dataFromB := []byte("Data from service B")
 		// data so serviceB
 		resp, err := http.Post("http://localhost:8081/endpointB", "application/json", bytes.NewBuffer(dataFromB))
 		if err != nil {
-			fmt.Println("Ошибка при отправке запроса:", err)
+			fmt.Println("Error response:", err)
 			return
 		}
 		defer resp.Body.Close()
 
 		// responce to serviceA
 		if resp.Status == "200 OK" {
-			fmt.Println("Ответ от сервиса B:", resp.Status)
+			fmt.Println("Error from service B:", resp.Status)
 		} else {
-			fmt.Println("Ошибка от сервиса B:", resp.Status)
+			fmt.Println("Error from service B:", resp.Status)
 		}
 
-		fmt.Fprintln(w, "Ответ от сервиса A")
+		fmt.Fprintln(w, "Error from service A")
 	})
 
 	// Start
