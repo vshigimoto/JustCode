@@ -6,30 +6,30 @@ import (
 )
 
 type Program struct {
-	Name    string `json:"название"`
-	Version string `json:"версия"`
-	Author  string `json:"автор"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	Author  string `json:"author"`
 	Code    struct {
-		Type    string `json:"тип"`
-		Content string `json:"содержание"`
-	} `json:"код"`
+		Type    string `json:"type"`
+		Content string `json:"description"`
+	} `json:"code"`
 }
 
 func generateProgram(jsonStr string) string {
 	var p Program
 	if err := json.Unmarshal([]byte(jsonStr), &p); err != nil {
-		return fmt.Sprintf("Ошибка разбора JSON: %v", err)
+		return fmt.Sprintf("Json problem: %v", err)
 	}
 
 	programCode := fmt.Sprintf(
-		"# %s (версия %s)\n# Автор: %s\n\nfunc main() {\n",
+		"# %s (verison %s)\n# Author: %s\n\nfunc main() {\n",
 		p.Name, p.Version, p.Author,
 	)
 
 	if p.Code.Type == "Go" {
 		programCode += fmt.Sprintf("    %s\n}\n", p.Code.Content)
 	} else {
-		programCode += "    fmt.Println(\"Неизвестный тип кода.\")\n}\n"
+		programCode += "    fmt.Println(\"Unknown type of code.\")\n}\n"
 	}
 
 	return programCode
@@ -38,12 +38,12 @@ func generateProgram(jsonStr string) string {
 func main() {
 	jsonStr := `
     {
-      "название": "My program",
-      "версия": "1.0",
-      "автор": "Имя автора",
-      "код": {
-        "тип": "Go",
-        "содержание": "fmt.Println(\"Привет, мир!\")"
+      "name": "My program",
+      "version": "1.0",
+      "author": "Author name",
+      "code": {
+        "type": "Go",
+        "description": "fmt.Println(\"Hello, world!\")"
       }
     }`
 
