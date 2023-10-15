@@ -4,13 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq" //
 	"log"
-	"net/http"
 	"start/database"
 )
-
-func home(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, gin.H{"message": "Hello world!"})
-}
 
 func main() {
 
@@ -19,17 +14,21 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
-
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS users(id serial PRIMARY KEY, name text, email text)")
+	if err != nil {
+		return
+	}
 	r := gin.Default()
 
 	if err != nil {
 		return
 	}
 
-	r.GET("/home", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, gin.H{"message": "hello world!"})
-	})
-	r.POST("/create-user", database.CreateUser(db))
+	r.GET("/user/all", database.GetUsers(db))
+	r.POST("/user", database.CreateUser(db))
+	r.PUT("/user/:id", database.UpdateUser(db))
+	r.DELETE("/user/:id", database.DeleteUser(db))
 
 	err = r.Run(":8080")
+
 }
