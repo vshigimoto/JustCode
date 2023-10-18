@@ -1,0 +1,15 @@
+<<<<<<< HEAD
+app:
+  name: 'booking-app'
+  version: '1.0.0'
+
+http:
+  port: '8080'
+=======
+app:
+  name: 'booking-app'
+  version: '1.0.0'
+
+http:
+  port: '8080'
+>>>>>>> 6f675299eb73d054dbd00c9bab6f1d368666b0d5
