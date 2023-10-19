@@ -1,6 +1,0 @@
-app:
-  name: 'booking-app'
-  version: '1.0.0'
-
-http:
-  port: '8080'
