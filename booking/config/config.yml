@@ -1,5 +1,5 @@
 app:
-  name: 'booking-app'
+  name: 'booking'
   version: '1.0.0'
 
 http:

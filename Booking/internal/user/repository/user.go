@@ -8,15 +8,6 @@ import (
 	"net/http"
 )
 
-type UserRepository interface {
-	CreateUser(db *sql.DB)
-	GetUsers(db *sql.DB)
-	UpdateUser(db *sql.DB)
-	DeleteUser(db *sql.DB)
-	GetByID(db *sql.DB)
-	Login(db *sql.DB)
-}
-
 // Create function add new user to DB
 func CreateUser(db *sql.DB) gin.HandlerFunc {
 	return func(ctx *gin.Context) {

@@ -1,21 +1,12 @@
-package repository
+package database
 
 import (
-	"booking/internal/user/entity"
 	"database/sql"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
+	"start/entity"
 )
-
-type UserRepository interface {
-	CreateUser(db *sql.DB)
-	GetUsers(db *sql.DB)
-	UpdateUser(db *sql.DB)
-	DeleteUser(db *sql.DB)
-	GetByID(db *sql.DB)
-	Login(db *sql.DB)
-}
 
 // Create function add new user to DB
 func CreateUser(db *sql.DB) gin.HandlerFunc {
@@ -99,49 +90,29 @@ func DeleteUser(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
-func GetByID(db *sql.DB) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		id := ctx.Param("id")
-		if id == "" {
-			ctx.JSON(http.StatusBadRequest, gin.H{"message": "id should not to be empty"})
-			return
-		}
-		rows, err := db.Query("SELECT * FROM users WHERE id=$1", id)
-		var user entity.User
-		defer rows.Close()
-		for rows.Next() {
-			if err = rows.Scan(&user.Id, &user.Name, &user.Email, &user.Password); err != nil {
-				ctx.JSON(http.StatusInternalServerError, err)
-				return
-			}
-		}
-		ctx.JSON(http.StatusOK, user)
-	}
-}
-
 func Login(db *sql.DB) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		id := ctx.Param("id")
-		if id == "" {
-			ctx.JSON(http.StatusBadRequest, gin.H{"message": "id should not to be empty"})
+		var login entity.Login
+		var user entity.User
+		err := ctx.ShouldBindJSON(&user)
+		if err != nil {
 			return
 		}
-		rows, err := db.Query("SELECT * FROM users WHERE id=$1", id)
-		var user entity.User
-		defer rows.Close()
-		for rows.Next() {
-			if err = rows.Scan(&user.Id, &user.Name, &user.Email, &user.Password); err != nil {
-				ctx.JSON(http.StatusInternalServerError, err)
-				return
-			}
+		rows, err := db.Query("SELECT * FROM users WHERE id=$1", login.Id)
+		if err = rows.Scan(&user.Id, &user.Name, &user.Email, &user.Password); err != nil {
+			ctx.JSON(http.StatusInternalServerError, err)
+			return
 		}
-		var login entity.Login
-		err = ctx.ShouldBindJSON(&login)
+
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"message": "Not found user"})
+			return
+		}
+		defer rows.Close()
 		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(login.Password))
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{"message": "not correct password"})
 			return
 		}
-		ctx.JSON(http.StatusOK, user)
 	}
 }

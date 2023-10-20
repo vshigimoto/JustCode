@@ -53,9 +53,6 @@ func main() {
 		v1.GET("/user/:id", repository.GetByID(db))
 	}
 
-	//user := &entity.User{"1", "John", "john@gmail.com", "12345"}
-	//repository.UserRepository.CreateUser(user)
-
 	// Listen and serve on localhost:8080
 	err = r.Run(":8080")
 
