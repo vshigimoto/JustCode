@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"booking/internal/redis/redis"
 	"booking/internal/user/entity"
 	"database/sql"
 	"github.com/gin-gonic/gin"
@@ -106,14 +107,30 @@ func GetByID(db *sql.DB) gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, gin.H{"message": "id should not to be empty"})
 			return
 		}
+		rdb := redis.NewRedisClient("localhost:6379", "", 0)
+		value := redis.GetValue(rdb, id)
+		if value != "" {
+			ctx.JSON(http.StatusOK, value)
+			return
+		}
 		rows, err := db.Query("SELECT * FROM users WHERE id=$1", id)
 		var user entity.User
-		defer rows.Close()
+		defer func(rows *sql.Rows) {
+			err := rows.Close()
+			if err != nil {
+
+			}
+		}(rows)
 		for rows.Next() {
 			if err = rows.Scan(&user.Id, &user.Name, &user.Email, &user.Password); err != nil {
 				ctx.JSON(http.StatusInternalServerError, err)
 				return
 			}
+		}
+		err = redis.SetValue(rdb, id, user.Email)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, err)
+			return
 		}
 		ctx.JSON(http.StatusOK, user)
 	}

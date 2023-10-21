@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq" //
-	"log"
 	"net/http"
 )
 
@@ -24,21 +23,12 @@ import (
 //}
 
 func main() {
-
-	db, err := database.Connect()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS users(id serial PRIMARY KEY, name text, email text, password text)")
-	if err != nil {
-		return
-	}
 	r := gin.Default()
 
 	handleRecovery := func(c *gin.Context, err any) {
 		c.JSON(http.StatusBadRequest, fmt.Sprintf("Bad Request err: %v", err))
 	}
+	db, err := database.Connect()
 	// Simple group: v1
 	v1 := r.Group("/v1")
 	{
@@ -58,5 +48,7 @@ func main() {
 
 	// Listen and serve on localhost:8080
 	err = r.Run(":8080")
-
+	if err != nil {
+		return
+	}
 }
