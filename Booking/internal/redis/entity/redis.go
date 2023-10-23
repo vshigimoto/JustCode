@@ -1,4 +1,4 @@
-package redis
+package entity
 
 type Redis struct {
 	Addr     string `json:"addr"`
