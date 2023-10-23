@@ -1,54 +1,48 @@
 package main
 
 import (
+	"booking/internal/user/config"
 	"booking/internal/user/database"
 	"booking/internal/user/repository"
+	"booking/internal/user/server/http"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq" //
-	"net/http"
+	"github.com/spf13/viper"
 )
-
-//func tockenAuth() gin.HandlerFunc {
-//	return func(ctx *gin.Context) {
-//		const token = "tokenXcxzcasdKLDSAdxc"
-//		tockenHeader := ctx.GetHeader("Authorization")
-//		if token != tockenHeader {
-//			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "token invalid"})
-//			ctx.Abort()
-//			return
-//		}
-//		ctx.Next()
-//	}
-//}
 
 func main() {
 	r := gin.Default()
-
-	handleRecovery := func(c *gin.Context, err any) {
-		c.JSON(http.StatusBadRequest, fmt.Sprintf("Bad Request err: %v", err))
+	cfg, err := loadConfig("config/user")
+	if err != nil {
+		return
 	}
-	db, err := database.Connect()
-	// Simple group: v1
-	v1 := r.Group("/v1")
-	{
-		//v1.Use() it is Middleware init
-		//v1.Use(tockenAuth())
-		v1.Use(gin.CustomRecovery(handleRecovery)) // error validation
-		v1.GET("/user/all", repository.GetUsers(db))
-		v1.POST("/user", repository.CreateUser(db))
-		v1.PUT("/user/:id", repository.UpdateUser(db))
-		v1.DELETE("/user/:id", repository.DeleteUser(db))
-		v1.POST("/login/:id", repository.Login(db))
-		v1.GET("/user/:id", repository.GetByID(db))
-	}
-
-	//user := &entity.User{"1", "John", "john@gmail.com", "12345"}
-	//repository.UserRepository.CreateUser(user)
-
-	// Listen and serve on localhost:8080
+	mainDB, err := database.New(cfg.Database.Main)
+	replicaDB, err := database.New(cfg.Database.Replica)
+	rep := repository.NewRepository(mainDB, replicaDB)
+	http.InitRouter(rep, r)
 	err = r.Run(":8080")
 	if err != nil {
 		return
 	}
+}
+
+func loadConfig(path string) (config config.Config, err error) {
+	viper.AddConfigPath(path)
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+
+	viper.AutomaticEnv()
+
+	err = viper.ReadInConfig()
+	if err != nil {
+		return config, fmt.Errorf("failed to ReadInConfig err: %w", err)
+	}
+
+	err = viper.Unmarshal(&config)
+	if err != nil {
+		return config, fmt.Errorf("failed to Unmarshal config err: %w", err)
+	}
+
+	return config, nil
 }
