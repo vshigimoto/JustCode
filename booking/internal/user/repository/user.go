@@ -9,8 +9,8 @@ import (
 	"net/http"
 )
 
-// Create function add new user to DB
-func (u *Repo) CreateUser() gin.HandlerFunc {
+// CreateUser Create function add new user to DB
+func (r *Repo) CreateUser() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var user entity.User
 		err := ctx.ShouldBindJSON(&user)
@@ -19,7 +19,7 @@ func (u *Repo) CreateUser() gin.HandlerFunc {
 			return
 		}
 		//user.Name and user.Email is arguments for prepared statement ($1 and $2)
-		err = u.main.QueryRow("insert into users(name, email, password) values($1, $2, $3) returning ID", user.Name, user.Email, string(hashedPassword)).Scan(&user.Id) // $1 and $2 is prepared statement
+		err = r.main.QueryRow("insert into users(name, email, password) values($1, $2, $3) returning ID", user.Name, user.Email, string(hashedPassword)).Scan(&user.Id) // $1 and $2 is prepared statement
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"message": err})
 			return
@@ -28,15 +28,20 @@ func (u *Repo) CreateUser() gin.HandlerFunc {
 	}
 }
 
-func (u *Repo) GetUsers() gin.HandlerFunc {
+func (r *Repo) GetUsers() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		users := make([]entity.User, 0)
 
-		rows, err := u.replica.Query("SELECT * from users")
+		rows, err := r.replica.Query("SELECT * from users")
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, err)
 		}
-		defer rows.Close()
+		defer func(rows *sql.Rows) {
+			err := rows.Close()
+			if err != nil {
+
+			}
+		}(rows)
 		for rows.Next() {
 			var user entity.User
 			if err = rows.Scan(&user.Id, &user.Name, &user.Email, &user.Password); err != nil {
@@ -54,7 +59,7 @@ func (u *Repo) GetUsers() gin.HandlerFunc {
 
 }
 
-func (u *Repo) UpdateUser() gin.HandlerFunc {
+func (r *Repo) UpdateUser() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		id := ctx.Param("id")
 		if id == "" {
@@ -67,7 +72,7 @@ func (u *Repo) UpdateUser() gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
 			return
 		}
-		_, err := u.main.Exec("UPDATE users SET name=$1, email=$2 WHERE id=$3", user.Name, user.Email, id)
+		_, err := r.main.Exec("UPDATE users SET name=$1, email=$2 WHERE id=$3", user.Name, user.Email, id)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, err)
 		}
@@ -75,14 +80,14 @@ func (u *Repo) UpdateUser() gin.HandlerFunc {
 	}
 }
 
-func (u *Repo) DeleteUser() gin.HandlerFunc {
+func (r *Repo) DeleteUser() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		id := ctx.Param("id")
 		if id == "" {
 			ctx.JSON(http.StatusBadRequest, gin.H{"message": "id should not to be empty"})
 			return
 		}
-		_, err := u.main.Exec("DELETE from users WHERE id=$1", id)
+		_, err := r.main.Exec("DELETE from users WHERE id=$1", id)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, err)
 			return
@@ -91,7 +96,7 @@ func (u *Repo) DeleteUser() gin.HandlerFunc {
 	}
 }
 
-func (u *Repo) GetByID() gin.HandlerFunc {
+func (r *Repo) GetById() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		id := ctx.Param("id")
 		if id == "" {
@@ -104,7 +109,7 @@ func (u *Repo) GetByID() gin.HandlerFunc {
 			ctx.JSON(http.StatusOK, value)
 			return
 		}
-		rows, err := u.replica.Query("SELECT * FROM users WHERE id=$1", id)
+		rows, err := r.replica.Query("SELECT * FROM users WHERE id=$1", id)
 		var user entity.User
 		defer func(rows *sql.Rows) {
 			err := rows.Close()
@@ -112,12 +117,12 @@ func (u *Repo) GetByID() gin.HandlerFunc {
 
 			}
 		}(rows)
-		for rows.Next() {
-			if err = rows.Scan(&user.Id, &user.Name, &user.Email, &user.Password); err != nil {
-				ctx.JSON(http.StatusInternalServerError, err)
-				return
-			}
+		rows.Next()
+		if err = rows.Scan(&user.Id, &user.Name, &user.Email, &user.Password); err != nil {
+			ctx.JSON(http.StatusInternalServerError, err)
+			return
 		}
+
 		err = redis.SetValue(rdb, id, user.Email)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, err)
