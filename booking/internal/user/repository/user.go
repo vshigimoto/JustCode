@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"booking/internal/redis/redis"
 	"booking/internal/user/entity"
 	"database/sql"
 	"github.com/gin-gonic/gin"
@@ -19,7 +18,7 @@ func (r *Repo) CreateUser() gin.HandlerFunc {
 			return
 		}
 		//user.Name and user.Email is arguments for prepared statement ($1 and $2)
-		err = r.main.QueryRow("insert into users(name, email, password) values($1, $2, $3) returning ID", user.Name, user.Email, string(hashedPassword)).Scan(&user.Id) // $1 and $2 is prepared statement
+		err = r.main.QueryRow("insert into users(name, email,login, password) values($1, $2, $3, $4) returning ID", user.Name, user.Email, user.Login, string(hashedPassword)).Scan(&user.Id) // $1 and $2 is prepared statement
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"message": err})
 			return
@@ -44,7 +43,7 @@ func (r *Repo) GetUsers() gin.HandlerFunc {
 		}(rows)
 		for rows.Next() {
 			var user entity.User
-			if err = rows.Scan(&user.Id, &user.Name, &user.Email, &user.Password); err != nil {
+			if err = rows.Scan(&user.Id, &user.Name, &user.Email, &user.Login, &user.Password); err != nil {
 				ctx.JSON(http.StatusInternalServerError, err)
 				return
 			}
@@ -72,7 +71,7 @@ func (r *Repo) UpdateUser() gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, gin.H{"message": "bad request"})
 			return
 		}
-		_, err := r.main.Exec("UPDATE users SET name=$1, email=$2 WHERE id=$3", user.Name, user.Email, id)
+		_, err := r.main.Exec("UPDATE users SET name=$1, email=$2, login=$3 WHERE id=$4", user.Name, user.Email, user.Login, id)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, err)
 		}
@@ -96,20 +95,14 @@ func (r *Repo) DeleteUser() gin.HandlerFunc {
 	}
 }
 
-func (r *Repo) GetById() gin.HandlerFunc {
+func (r *Repo) GetByLogin() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		id := ctx.Param("id")
-		if id == "" {
+		login := ctx.Param("login")
+		if login == "" {
 			ctx.JSON(http.StatusBadRequest, gin.H{"message": "id should not to be empty"})
 			return
 		}
-		rdb := redis.NewRedisClient("localhost:6379", "", 0) // need to read from config
-		value := redis.GetValue(rdb, id)
-		if value != "" {
-			ctx.JSON(http.StatusOK, value)
-			return
-		}
-		rows, err := r.replica.Query("SELECT * FROM users WHERE id=$1", id)
+		rows, err := r.replica.Query("SELECT * FROM users WHERE login=$1", login)
 		var user entity.User
 		defer func(rows *sql.Rows) {
 			err := rows.Close()
@@ -118,13 +111,7 @@ func (r *Repo) GetById() gin.HandlerFunc {
 			}
 		}(rows)
 		rows.Next()
-		if err = rows.Scan(&user.Id, &user.Name, &user.Email, &user.Password); err != nil {
-			ctx.JSON(http.StatusInternalServerError, err)
-			return
-		}
-
-		err = redis.SetValue(rdb, id, user.Email)
-		if err != nil {
+		if err = rows.Scan(&user.Id, &user.Name, &user.Email, &user.Login, &user.Password); err != nil {
 			ctx.JSON(http.StatusInternalServerError, err)
 			return
 		}

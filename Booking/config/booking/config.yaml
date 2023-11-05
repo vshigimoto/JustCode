@@ -1,16 +1,18 @@
 HttpServer:
-  Port: 9235
+  Port: 9234
 
 Database:
   Main:
-    Host: 'localhost'
+    Host: '127.0.0.1'
     SslMode: 'disable'
+    Port: '5432'
     User: 'postgres'
     Password: 'postgres'
-    DbName: 'postgres'
+    DbName: 'booking'
   Replica:
     Host: '127.0.0.1'
     SslMode: 'disable'
+    Port: '5432'
     User: 'postgres'
     Password: 'postgres'
-    DbName: 'postgres'
+    DbName: 'booking'

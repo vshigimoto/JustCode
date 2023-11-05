@@ -5,16 +5,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type UserRepository interface {
-	CreateUser() gin.HandlerFunc
-	GetByLogin() gin.HandlerFunc
-	UpdateUser() gin.HandlerFunc
-	DeleteUser() gin.HandlerFunc
-	GetUsers() gin.HandlerFunc
+type BookingRepository interface {
+	CreateApartment() gin.HandlerFunc
+	GetApartments() gin.HandlerFunc
+	UpdateApartment() gin.HandlerFunc
+	DeleteApartment() gin.HandlerFunc
+	GetApartmentById() gin.HandlerFunc
 }
 
 type Repository interface {
-	UserRepository
+	BookingRepository
 }
 
 type Repo struct {

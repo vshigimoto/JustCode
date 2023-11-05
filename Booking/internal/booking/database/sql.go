@@ -1,7 +1,7 @@
 package database
 
 import (
-	"booking/internal/auth/config"
+	"booking/internal/booking/config"
 	"database/sql"
 	"fmt"
 )

@@ -1,12 +1,17 @@
 package config
 
 type Config struct {
-	Database Database `yaml:"Database"`
+	Database   Database   `yaml:"Database"`
+	HttpServer HttpServer `yaml:"HttpServer"`
 }
 
 type Database struct {
 	Main    DbNone `yaml:"Main"`
 	Replica DbNone `yaml:"Replica"`
+}
+
+type HttpServer struct {
+	Port int `yaml:"Port"`
 }
 
 type DbNone struct {
