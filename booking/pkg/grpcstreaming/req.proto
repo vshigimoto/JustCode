@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package port;
+
+option go_package = "github.com/you/pirate/pkg/protobuf/port;protoport";
+
+service PortService {
+  rpc Create(stream CreateRequest) returns (CreateResponse) {}
+}
+
+message CreateRequest {
+  string id = 1;
+  string name = 2;
+}
+
+message CreateResponse {
+  int32 total = 1;
+}
